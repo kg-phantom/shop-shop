@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { idbPromise } from '../../utils/helpers';
 import { useQuery } from '@apollo/client';
 import { useStoreContext } from '../../utils/GlobalState';
 import { UPDATE_PRODUCTS } from '../../utils/actions';
@@ -20,8 +21,21 @@ function ProductList() {
         type: UPDATE_PRODUCTS,
         products: data.products
       });
+
+      // save to IndexedDB
+      data.products.forEach((product) => {
+        idbPromise('products', 'put', product);
+      });
+    } else if (!loading) {
+      // offline: get all of the data from the `products` store
+      idbPromise('products', 'get').then((products) => {
+        dispatch({
+          type: UPDATE_PRODUCTS,
+          products: products
+        });
+      });
     }
-  }, [data, dispatch]);
+  }, [data, loading, dispatch]);
 
   function filterProducts() {
     if (!currentCategory) {
